@@ -791,6 +791,8 @@ class NetatmoEnergySensor(NetatmoBaseSensor):
             ]
         )
 
+    _attr_should_poll = False
+
     async def async_update(self) -> None:
         """Force update of entity."""
         self.data_handler.async_force_update(self._attr_unique_id)
