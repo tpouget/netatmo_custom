@@ -623,7 +623,6 @@ class MonitoringMixin(EntityBase):
 class MeasureInterval(Enum):
     """Measure interval."""
 
-    MAX = "max"
     HALF_HOUR = "30min"
     HOUR = "1hour"
     THREE_HOURS = "3hours"
@@ -654,7 +653,6 @@ class MeasureType(Enum):
 
 
 MEASURE_INTERVAL_TO_SECONDS = {
-    MeasureInterval.MAX: 0,
     MeasureInterval.HALF_HOUR: 1800,
     MeasureInterval.HOUR: 3600,
     MeasureInterval.THREE_HOURS: 10800,
@@ -1114,6 +1112,8 @@ class Module(NetatmoBase):
             self.name = update_name(self.name, self.home.modules[self.bridge].name)
 
         self.update_features()
+        if self.device_type == DeviceType.NLE:
+            LOG.debug("NLE %s (%s) RAW DATA: %s", self.name, self.entity_id, raw_data)
 
         # If we have an NLE as a bridge all its bridged modules will have to be reachable
         if self.device_type == DeviceType.NLE:

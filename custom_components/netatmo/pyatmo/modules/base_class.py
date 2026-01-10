@@ -100,6 +100,8 @@ class NetatmoBase(EntityBase, ABC):
             key: NETATMO_ATTRIBUTES_MAP.get(key, default(key, val))(raw_data, val)
             for key, val in self.__dict__.items()
         }
+        if "device_type" in self.__dict__ and self.device_type == DeviceType.NLE:
+             LOG.debug("NLE %s ATTRIBUTES AFTER UPDATE: %s", self.entity_id, {k: getattr(self, k) for k in self.__dict__ if k in ["power", "sum_energy_elec"]})
 
         now = int(time())
         for hist_feature in self.history_features:
