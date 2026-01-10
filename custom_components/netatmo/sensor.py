@@ -809,9 +809,10 @@ class NetatmoEnergySensor(NetatmoBaseSensor):
         end_time = int(end.timestamp())
         start_time = int(start.timestamp())
 
-        num_calls = await self.device.async_update_measures(start_time=start_time,
+        await self.device.async_update_measures(start_time=start_time,
                                                             end_time=end_time,
                                                             interval=MeasureInterval.HALF_HOUR)
+        num_calls = 1
 
         from .pyatmo.modules.module import PowerMixin
         if isinstance(self.device, PowerMixin):
