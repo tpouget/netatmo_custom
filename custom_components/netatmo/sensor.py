@@ -791,6 +791,10 @@ class NetatmoEnergySensor(NetatmoBaseSensor):
             ]
         )
 
+    async def async_update(self) -> None:
+        """Force update of entity."""
+        self.data_handler.async_force_update(self._attr_unique_id)
+
     async def async_update_energy(self, **kwargs):
 
         if isinstance(self.device, EnergyHistoryMixin) is False:
