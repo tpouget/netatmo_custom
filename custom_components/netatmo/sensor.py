@@ -798,14 +798,8 @@ class NetatmoEnergySensor(NetatmoBaseSensor):
         self.data_handler.async_force_update(self._attr_unique_id)
 
     async def async_update_energy(self, **kwargs):
-        _LOGGER.debug(
-            "DEBUG: async_update_energy called for %s - type(device)=%s",
-            self.entity_id,
-            type(self.device),
-        )
 
         if isinstance(self.device, EnergyHistoryMixin) is False:
-            _LOGGER.debug("DEBUG: Device %s is NOT EnergyHistoryMixin", self.entity_id)
             return 0
 
         end = datetime.now()
@@ -813,10 +807,12 @@ class NetatmoEnergySensor(NetatmoBaseSensor):
 
         #netatmo is only keeping energy measures for 2.5 days, we reset every day
         if end.day != start.day:
-            #force everything at 0
-            self.device.reset_measures(start_power_time=end)
-            self._current_start_anchor = end
-            return 0
+            #reset to midnight to force full day fetch
+            start_node = end.replace(hour=0, minute=0, second=0, microsecond=0)
+            self.device.reset_measures(start_power_time=start_node)
+            self._current_start_anchor = start_node
+            # do not return 0, proceed to fetch
+            start = start_node
 
         end_time = int(end.timestamp())
         start_time = int(start.timestamp())
