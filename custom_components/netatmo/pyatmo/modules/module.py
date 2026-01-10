@@ -325,6 +325,7 @@ class PowerMixin(EntityBase):
         super().__init__(home, module)
         self.power: int | None = None
         self.history_features.add("power")
+        self._skipped_power_snapshot = False
 
     async def async_update_power(
         self,
@@ -337,6 +338,9 @@ class PowerMixin(EntityBase):
         if start_time is None:
             start_time = end_time - 3600
 
+        if self._skipped_power_snapshot:
+            return
+
         params = {
             "device_id": self.bridge or self.entity_id,
             "module_id": self.entity_id,
@@ -346,10 +350,17 @@ class PowerMixin(EntityBase):
             "date_end": int(end_time),
         }
 
-        resp: ClientResponse = await self.home.auth.async_post_api_request(
-            endpoint=GETMEASURE_ENDPOINT,
-            params=params,
-        )
+        try:
+            resp: ClientResponse = await self.home.auth.async_post_api_request(
+                endpoint=GETMEASURE_ENDPOINT,
+                params=params,
+            )
+        except ApiError as err:
+            if "(21)" in str(err):
+                LOG.debug("Power snapshot not supported for %s (%s)", self.name, self.entity_id)
+                self._skipped_power_snapshot = True
+                return
+            raise
 
         rw_dt_f = await resp.json()
         rw_dt = rw_dt_f.get("body")
