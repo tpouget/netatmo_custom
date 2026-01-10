@@ -130,7 +130,7 @@ NETATMO_DEV_CALL_LIMITS = {
     CALL_PER_HOUR: 450,        # in this case per user limit is: 500 requests every hour
     CALL_PER_TEN_SECONDS: 45,  # in this case per user limit is: 50 requests every 10 seconds
     ACCOUNT: 3600,
-    HOME: 5,
+    HOME: 300,
     WEATHER: 200,
     AIR_CARE: 100,
     PUBLIC: 200,
@@ -581,11 +581,14 @@ class NetatmoDataHandler:
         has_throttling_error = False
 
         if update_only is False:
+            num_calls = 1
 
             try:
-                await getattr(self.publisher[signal_name].target, self.publisher[signal_name].method)(
+                res = await getattr(self.publisher[signal_name].target, self.publisher[signal_name].method)(
                     **self.publisher[signal_name].kwargs
                 )
+                if isinstance(res, int) and res > 0:
+                    num_calls = res
             except pyatmo.NoDeviceError as err:
                 _LOGGER.debug("fetch error NoDeviceError: %s", err)
                 has_error = True
@@ -605,7 +608,7 @@ class NetatmoDataHandler:
                 _LOGGER.debug("fetch error unknown %s", err)
                 has_error = True
 
-            self.add_api_call(1)
+            self.add_api_call(num_calls)
 
         for update_callback in self.publisher[signal_name].subscriptions:
             if update_callback:
