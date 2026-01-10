@@ -326,6 +326,58 @@ class PowerMixin(EntityBase):
         self.power: int | None = None
         self.history_features.add("power")
 
+    async def async_update_power(
+        self,
+        start_time: float | None = None,
+        end_time: float | None = None,
+    ) -> None:
+        """Update power data with real-time snapshots."""
+        if end_time is None:
+            end_time = int(time())
+        if start_time is None:
+            start_time = end_time - 3600
+
+        params = {
+            "device_id": self.bridge or self.entity_id,
+            "module_id": self.entity_id,
+            "scale": "max",
+            "type": "power",
+            "date_begin": int(start_time),
+            "date_end": int(end_time),
+        }
+
+        resp: ClientResponse = await self.home.auth.async_post_api_request(
+            endpoint=GETMEASURE_ENDPOINT,
+            params=params,
+        )
+
+        rw_dt_f = await resp.json()
+        rw_dt = rw_dt_f.get("body")
+
+        if self.device_type == DeviceType.NLE:
+            LOG.debug("NLE %s POWER Snapshot BODY: %s", self.entity_id, rw_dt)
+
+        if rw_dt:
+            for values_lot in rw_dt:
+                try:
+                    start_lot_time = int(values_lot["beg_time"])
+                except (KeyError, TypeError):
+                    continue
+                
+                interval_sec = values_lot.get("step_time")
+                cur_time = start_lot_time
+                for val_arr in values_lot.get("value", []):
+                    if val_arr and val_arr[0] is not None:
+                        p = float(val_arr[0])
+                        self.power = int(p)
+                        self.add_history_data("power", p, cur_time)
+                    if interval_sec:
+                        cur_time += int(interval_sec)
+                    elif len(values_lot.get("value", [])) > 1:
+                         # if multiple values but no step_time, we can't reliably time them
+                         # unless we assume a default (e.g. 1 min)
+                         cur_time += 60 
+
 
 class EventMixin(EntityBase):
     """Mixin for event data."""
@@ -638,6 +690,7 @@ class MeasureType(Enum):
     BOILEROFF = "boileroff"
     SUM_BOILER_ON = "sum_boiler_on"
     SUM_BOILER_OFF = "sum_boiler_off"
+    POWER = "power"
     SUM_ENERGY_ELEC = "sum_energy_buy_from_grid"
     SUM_ENERGY_ELEC_BASIC = "sum_energy_buy_from_grid$0"
     SUM_ENERGY_ELEC_PEAK = "sum_energy_buy_from_grid$1"

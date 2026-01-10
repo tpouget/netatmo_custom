@@ -812,6 +812,11 @@ class NetatmoEnergySensor(NetatmoBaseSensor):
         num_calls = await self.device.async_update_measures(start_time=start_time,
                                                             end_time=end_time,
                                                             interval=MeasureInterval.HALF_HOUR)
+
+        from .pyatmo.modules.module import PowerMixin
+        if isinstance(self.device, PowerMixin):
+            await self.device.async_update_power(start_time=start_time, end_time=end_time)
+            num_calls += 1
         # let the subsequent callback update the state energy data  and the availability
         return num_calls
 
