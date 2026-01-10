@@ -338,6 +338,9 @@ class PowerMixin(EntityBase):
         if start_time is None:
             start_time = end_time - 3600
 
+        if self.device_type == DeviceType.NLE:
+            return
+
         if self._skipped_power_snapshot:
             return
 
@@ -1136,6 +1139,19 @@ class EnergyHistoryLegacyMixin(EnergyHistoryMixin):
 
     def _get_energy_filers(self) -> str:
         return ENERGY_FILTERS_LEGACY
+
+    async def async_update_measures(
+        self,
+        start_time: int | None = None,
+        end_time: int | None = None,
+        interval: MeasureInterval = MeasureInterval.HOUR,
+        days: int = 7,
+    ) -> None:
+        """Update historical data."""
+        if interval == MeasureInterval.HALF_HOUR:
+            interval = MeasureInterval.HOUR
+
+        await super().async_update_measures(start_time, end_time, interval, days)
 
 
 class Module(NetatmoBase):
