@@ -6,7 +6,7 @@ path="custom_components/netatmo/pyatmo"
 rm ${path}/*.py
 rm ${path}/*.typed
 
-GH_ACCOUNT="tmenguy"
+GH_ACCOUNT="tpouget"
 GH_REPO="pyatmo"
 GH_BRANCH="development"
 gh_path="${GH_RAW_BASE}/${GH_ACCOUNT}/${GH_REPO}/${GH_BRANCH}/src/pyatmo"
