@@ -1045,6 +1045,8 @@ class EnergyHistoryMixin(EntityBase):
 
         rw_dt_f = await resp.json()
         rw_dt = rw_dt_f.get("body")
+        if self.device_type == DeviceType.NLE:
+            LOG.debug("NLE %s ENERGY API CALL scale=%s type=%s BODY: %s", self.entity_id, interval.value, filters, rw_dt)
 
         if rw_dt is None:
             self._log_energy_error(
