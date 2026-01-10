@@ -623,6 +623,7 @@ class MonitoringMixin(EntityBase):
 class MeasureInterval(Enum):
     """Measure interval."""
 
+    MAX = "max"
     HALF_HOUR = "30min"
     HOUR = "1hour"
     THREE_HOURS = "3hours"
@@ -653,6 +654,7 @@ class MeasureType(Enum):
 
 
 MEASURE_INTERVAL_TO_SECONDS = {
+    MeasureInterval.MAX: 0,
     MeasureInterval.HALF_HOUR: 1800,
     MeasureInterval.HOUR: 3600,
     MeasureInterval.THREE_HOURS: 10800,

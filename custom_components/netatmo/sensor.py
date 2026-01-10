@@ -811,7 +811,7 @@ class NetatmoEnergySensor(NetatmoBaseSensor):
 
         num_calls = await self.device.async_update_measures(start_time=start_time,
                                                             end_time=end_time,
-                                                            interval=MeasureInterval.HALF_HOUR)
+                                                            interval=MeasureInterval.MAX)
         # let the subsequent callback update the state energy data  and the availability
         return num_calls
 
