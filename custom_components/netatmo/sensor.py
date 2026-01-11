@@ -840,7 +840,7 @@ class NetatmoEnergySensor(NetatmoBaseSensor):
         if self.device.in_reset is False:
             v, delta_energy = self.device.get_sum_energy_elec_power_adapted(conservative=False)
             new_val = v + delta_energy
-            new_val = v + delta_energy
+            prev_energy = self._last_val_sent
             state = new_val
             _LOGGER.debug("UPDATE ENERGY FOR: %s delta: %s nrjAPI %s nrj+delta %s prev %s RETAINED: %s",
                           self.device.name, delta_energy, v, v + delta_energy, prev_energy, state)
