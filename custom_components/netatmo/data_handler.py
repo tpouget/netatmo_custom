@@ -610,9 +610,10 @@ class NetatmoDataHandler:
 
             self.add_api_call(num_calls)
 
-        for update_callback in self.publisher[signal_name].subscriptions:
-            if update_callback:
-                update_callback()
+        if not has_error:
+            for update_callback in self.publisher[signal_name].subscriptions:
+                if update_callback:
+                    update_callback()
 
         return has_error, has_throttling_error
 

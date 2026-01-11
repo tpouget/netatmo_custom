@@ -847,10 +847,7 @@ class NetatmoEnergySensor(NetatmoBaseSensor):
             _LOGGER.debug("UPDATE ENERGY FOR: %s delta: %s nrjAPI %s nrj+delta %s prev %s RETAINED: %s",
                           self.device.name, delta_energy, v, v + delta_energy, prev_energy, state)
         else:
-            state = 0
-            # force only one 0 measure
-            self.device.in_reset = False
-            _LOGGER.debug("RESET ENERGY FOR: %s RETAINED: %s", self.device.name, 0)
+            return
 
         self._attr_available = True
         self._attr_native_value = state

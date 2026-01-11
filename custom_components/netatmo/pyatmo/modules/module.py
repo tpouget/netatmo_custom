@@ -891,24 +891,25 @@ class EnergyHistoryMixin(EntityBase):
 
         delta_range = MEASURE_INTERVAL_TO_SECONDS.get(interval, 0) // 2
 
-        filters, raw_data = await self._energy_api_calls(start_time, end_time, interval)
+        try:
+            filters, raw_data = await self._energy_api_calls(start_time, end_time, interval)
 
-        hist_good_vals = await self._get_aligned_energy_values_and_mode(
-            start_time,
-            end_time,
-            delta_range,
-            raw_data,
-        )
+            hist_good_vals = await self._get_aligned_energy_values_and_mode(
+                start_time,
+                end_time,
+                delta_range,
+                raw_data,
+            )
 
-        prev_sum_energy_elec = self.sum_energy_elec
-        self.sum_energy_elec = 0.0
-        self.sum_energy_elec_peak = 0.0
-        self.sum_energy_elec_off_peak = 0.0
+            prev_sum_energy_elec = self.sum_energy_elec
+            self.sum_energy_elec = 0.0
+            self.sum_energy_elec_peak = 0.0
+            self.sum_energy_elec_off_peak = 0.0
 
-        # no data at all: we know nothing for the end: best guess, it is the start
-        self._anchor_for_power_adjustment = start_time
-
-        self.in_reset = False
+            # no data at all: we know nothing for the end: best guess, it is the start
+            self._anchor_for_power_adjustment = start_time
+        finally:
+            self.in_reset = False
 
         if len(hist_good_vals) == 0:
             # nothing has been updated or changed it can nearly be seen as an error, but the api is answering correctly
