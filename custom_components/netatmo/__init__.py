@@ -78,6 +78,33 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
     _reset_hass_domain(hass)
 
+
+    # Monkey patch EnergyHistoryLegacyMixin to allow 30min updates
+    try:
+        from . import pyatmo
+        from .pyatmo.modules.module import EnergyHistoryLegacyMixin, MeasureInterval
+    except ImportError:
+        import pyatmo
+        from pyatmo.modules.module import EnergyHistoryLegacyMixin, MeasureInterval
+
+    original_update_measures = EnergyHistoryLegacyMixin.async_update_measures
+
+    async def _async_update_measures_patched(
+        self,
+        start_time: int | None = None,
+        end_time: int | None = None,
+        interval: MeasureInterval = MeasureInterval.HOUR,
+        days: int = 7,
+    ) -> None:
+        """Update historical data (Patched to allow HALF_HOUR)."""
+        # Original code forces HALF_HOUR -> HOUR here. We skip that check.
+        # Call the grandparent method (EnergyHistoryMixin.async_update_measures)
+        # effectively bypassing the override in EnergyHistoryLegacyMixin.
+        await super(EnergyHistoryLegacyMixin, self).async_update_measures(start_time, end_time, interval, days)
+
+    EnergyHistoryLegacyMixin.async_update_measures = _async_update_measures_patched
+    _LOGGER.info("Applied monkey patch to EnergyHistoryLegacyMixin to allow 30min updates")
+
     return True
 
 
