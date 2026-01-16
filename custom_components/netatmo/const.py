@@ -68,6 +68,7 @@ CONF_NEW_AREA = "new_area"
 CONF_PUBLIC_MODE = "mode"
 CONF_WEATHER_AREAS = "weather_areas"
 CONF_DISABLED_HOMES = "disabled_homes"
+CONF_DISABLED_MODULES = "disabled_modules"
 
 OAUTH2_AUTHORIZE = "https://api.netatmo.com/oauth2/authorize"
 OAUTH2_TOKEN = "https://api.netatmo.com/oauth2/token"

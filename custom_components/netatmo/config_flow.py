@@ -31,6 +31,7 @@ from .const import (
     CONF_WEATHER_AREAS,
     DOMAIN,
     CONF_DISABLED_HOMES,
+    CONF_DISABLED_MODULES,
     DATA_HANDLER,
 )
 
@@ -127,9 +128,7 @@ class NetatmoOptionsFlowHandler(OptionsFlow):
 
 
             enabled_homes = user_input.pop(INTERMEDIATE_ENABLED_HOMES, [])
-
             if enabled_homes:
-
                 homes = self.hass.data[DOMAIN][self.config_entry.entry_id][DATA_HANDLER].account.all_homes_id
                 disabled_homes = []
                 for hid in homes:
@@ -137,6 +136,39 @@ class NetatmoOptionsFlowHandler(OptionsFlow):
                         disabled_homes.append(hid)
 
                 user_input[CONF_DISABLED_HOMES] = disabled_homes
+
+            INTERMEDIATE_ENABLED_MODULES = "enabled_modules"
+            enabled_modules = user_input.pop(INTERMEDIATE_ENABLED_MODULES, [])
+            # We only process if the key was present (i.e. the field was shown)
+            # But wait, if the user didn't select anything, it might come back empty? 
+            # cv.multi_select usually returns a list.
+            
+            # Implementation note: we need to re-fetch all modules to calculate the diff
+            # effectively creating the blacklist. 
+            # We can re-fetch or trust that we persist the existing logic.
+            
+            # Since we construct the form dynamically based on ALL current modules, 
+            # we can just fetch them again here.
+            
+            modules = self.hass.data[DOMAIN][self.config_entry.entry_id][DATA_HANDLER].account.modules
+            disabled_modules = []
+            
+            # If the user input contains the key, we calculate disabled modules
+            # Note: if the form didn't show the field (e.g. no modules found), enabled_modules would be empty
+            # but we shouldn't overwrite existing disabled modules in that edge case unless we are sure.
+            # However, in the step method, we construct the schema again if input is None.
+            # Here input is NOT None. 
+            # We can assume if the key is missing from user_input, it wasn't in the schema? 
+            # Actually user_input contains all keys from the schema. 
+             
+            if modules: 
+                 # We have modules, so the field must have been shown or at least we can calc the diff
+                 # Logic: Disabled = All Existing - Enabled
+                 for mid in modules:
+                     if mid not in enabled_modules:
+                         disabled_modules.append(mid)
+                 
+                 user_input[CONF_DISABLED_MODULES] = disabled_modules
 
 
             self.options.update(user_input)
@@ -171,6 +203,41 @@ class NetatmoOptionsFlowHandler(OptionsFlow):
                 ): cv.multi_select(homes),
 
             })
+
+        INTERMEDIATE_ENABLED_MODULES = "enabled_modules"
+        modules = self.hass.data[DOMAIN][self.config_entry.entry_id][DATA_HANDLER].account.modules
+        
+        # Filter modules to show only "top level" or interesting ones if needed, 
+        # or show all. For NLE user requests, all modules under NLE need to be selectable.
+        # NLE (Ecocompteur) sub-modules are typically meters or switches. 
+        # But here we probably just want to list ALL modules that are not gateways themselves 
+        # or maybe just EVERYTHING and let the user choose.
+        # To be safe and comprehensive, we list all modules.
+        
+        selectable_modules = {
+            mid: f"{m.name} ({m.device_type}) - {self.hass.data[DOMAIN][self.config_entry.entry_id][DATA_HANDLER].account.homes[m.home.entity_id].name}"
+            for mid, m in modules.items()
+        }
+        
+        if selectable_modules:
+             l_disabled_modules = self.options.get(CONF_DISABLED_MODULES, [])
+             
+             l_selected_modules = []
+             for mid in selectable_modules:
+                 if mid not in l_disabled_modules:
+                     l_selected_modules.append(mid)
+            
+             # If nothing is selected (edge case or first run with no disables), select all
+             if not l_selected_modules and not l_disabled_modules:
+                  l_selected_modules = list(selectable_modules.keys())
+             
+             schema.update({
+                vol.Optional(
+                    INTERMEDIATE_ENABLED_MODULES,
+                    default=l_selected_modules,
+                ): cv.multi_select(selectable_modules),
+            })
+
 
         schema.update({
             vol.Optional(

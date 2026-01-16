@@ -1,2 +1,4 @@
 /venv/
 .idea
+screenshots/
+custom_components/netatmo/ha_netatmo_component.code-workspace

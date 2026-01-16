@@ -36,6 +36,7 @@ from homeassistant.helpers.event import async_track_time_interval
 from .const import (
     AUTH,
     CONF_DISABLED_HOMES,
+    CONF_DISABLED_MODULES,
     DATA_PERSONS,
     DATA_SCHEDULES,
     DOMAIN,
@@ -793,6 +794,9 @@ class NetatmoDataHandler:
         }
         for module in home.modules.values():
             if not module.device_category:
+                continue
+
+            if module.entity_id in self.config_entry.options.get(CONF_DISABLED_MODULES, []):
                 continue
 
             signals = netatmo_type_signal_map.get(module.device_category, [])
