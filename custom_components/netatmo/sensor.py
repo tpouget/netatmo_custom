@@ -49,6 +49,7 @@ from homeassistant.helpers.dispatcher import (
     async_dispatcher_send,
 )
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.typing import StateType
 
 from .const import (
@@ -752,7 +753,7 @@ class NetatmoSensor(NetatmoBaseSensor):
         )
 
 
-class NetatmoEnergySensor(NetatmoBaseSensor):
+class NetatmoEnergySensor(NetatmoBaseSensor, RestoreEntity):
     """Implementation of an energy Netatmo sensor."""
 
     _last_end: datetime | None
@@ -796,6 +797,18 @@ class NetatmoEnergySensor(NetatmoBaseSensor):
     async def async_update(self) -> None:
         """Force update of entity."""
         self.data_handler.async_force_update(self._attr_unique_id)
+
+    async def async_added_to_hass(self) -> None:
+        """Handle entity which will be added."""
+        await super().async_added_to_hass()
+        if (last_state := await self.async_get_last_state()) and isinstance(last_state.state, (int, float)):
+             try:
+                self.device.sum_energy_elec = float(last_state.state)
+                self._attr_native_value = self.device.sum_energy_elec
+                self._last_val_sent = self.device.sum_energy_elec
+             except (ValueError, TypeError):
+                 # if the state is not a number we can't restore it
+                 pass
 
     async def async_update_energy(self, **kwargs):
 
